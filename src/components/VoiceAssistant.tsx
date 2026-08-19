@@ -9,23 +9,30 @@ export default function VoiceAssistant() {
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const router = useRouter();
 
   const { language } = useLanguage();
 
-  const processText = async (text: string) => {
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  const processAudio = async (audioBlob: Blob) => {
     setIsProcessing(true);
     try {
-      console.log("Heard:", text);
-      if (!text || text.trim() === '') return;
+      // Convert Blob to Base64
+      const buffer = await audioBlob.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64Audio = btoa(binary);
 
-      // 1. Send text to LLM to get intent
-      const chatRes = await fetch('/api/chat', {
+      // 1. Send base64 audio to LLM to get intent
+      const chatRes = await fetch('/api/chat_audio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: text, lang: language })
+        body: JSON.stringify({ audio: base64Audio })
       });
       const data = await chatRes.json();
       console.log("AI Intent:", data);
@@ -57,7 +64,7 @@ export default function VoiceAssistant() {
     } catch (error) {
       console.error("Error processing voice intent", error);
       // Fallback audio if something fails
-      const fallbackMsg = language === 'en' ? "Sorry, system error." : "માફ કરજો, સિસ્ટમમાં ખામી છે.";
+      const fallbackMsg = language === 'en' ? "Please try again." : "ફરી પ્રયત્ન કરો.";
       const ttsLang = language === 'en' ? 'en-US' : 'gu-IN';
       const audio = new Audio(`/api/tts?text=${encodeURIComponent(fallbackMsg)}&lang=${ttsLang}`);
       audio.play();
@@ -66,49 +73,48 @@ export default function VoiceAssistant() {
     }
   };
 
-  const startRecording = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert('તમારા ફોનમાં વોઇસ ટાઇપિંગ સપોર્ટ નથી. (Voice not supported)');
-      return;
-    }
+  const startRecording = async () => {
+    try {
+      if (audioRef.current) audioRef.current.pause();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
 
-    if (audioRef.current) audioRef.current.pause();
-    
-    const recognition = new SpeechRecognition();
-    
-    // Use the current app language for speech recognition!
-    if (language === 'en') recognition.lang = 'en-US';
-    else if (language === 'hi') recognition.lang = 'hi-IN';
-    else recognition.lang = 'gu-IN';
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
 
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    
-    recognition.onstart = () => {
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        processAudio(audioBlob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
       setIsListening(true);
-    };
+      
+      // Stop automatically after 5 seconds
+      setTimeout(() => {
+        if (mediaRecorder.state === 'recording') {
+          mediaRecorder.stop();
+          setIsListening(false);
+        }
+      }, 5000);
 
-    recognition.onresult = (e: any) => {
-      const transcript = e.results[0][0].transcript;
-      processText(transcript);
-    };
-
-    recognition.onerror = (e: any) => {
-      console.error("Speech recognition error", e.error);
-      setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognition.start();
+    } catch (error) {
+      console.error("Error accessing microphone", error);
+      alert('માઈક ચાલુ કરવામાં ભૂલ આવી. (Microphone Error)');
+    }
   };
 
   const stopRecording = () => {
-    // With browser speech recognition, it stops automatically or we just let it end.
-    setIsListening(false);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      setIsListening(false);
+    }
   };
 
   const toggleVoice = () => {
