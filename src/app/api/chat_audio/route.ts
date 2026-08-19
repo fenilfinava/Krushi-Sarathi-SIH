@@ -90,7 +90,7 @@ Available actions:
     return NextResponse.json(parsed);
   } catch (error: any) {
     console.error('API Error:', error);
-    let errorMsg = 'માફ કરજો, સિસ્ટમમાં ખામી આવી છે. (System Error)';
+    let errorMsg = `માફ કરજો, સિસ્ટમમાં ખામી આવી છે. Error: ${error.message}`;
     
     if (error.message.includes('API_KEY_INVALID') || error.message.includes('400') || error.message.includes('403')) {
       errorMsg = 'API Key ખોટી છે, કૃપા કરીને Vercel માં સાચી કી નાખો. (Invalid API Key)';

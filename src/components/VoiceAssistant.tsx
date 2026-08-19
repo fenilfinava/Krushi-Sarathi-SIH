@@ -19,14 +19,18 @@ export default function VoiceAssistant() {
   const processAudio = async (audioBlob: Blob) => {
     setIsProcessing(true);
     try {
-      // Convert Blob to Base64
-      const buffer = await audioBlob.arrayBuffer();
-      const bytes = new Uint8Array(buffer);
-      let binary = '';
-      for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-      const base64Audio = btoa(binary);
+      // Convert Blob to Base64 using FileReader
+      const base64Audio = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          // Extract just the base64 part, removing "data:audio/webm;base64,"
+          const base64String = result.split(',')[1];
+          resolve(base64String);
+        };
+        reader.onerror = reject;
+      });
 
       // 1. Send base64 audio to LLM to get intent
       const chatRes = await fetch('/api/chat_audio', {
@@ -89,6 +93,11 @@ export default function VoiceAssistant() {
 
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType });
+        if (audioBlob.size === 0) {
+          console.error("Empty audio blob");
+          setIsListening(false);
+          return;
+        }
         processAudio(audioBlob);
         stream.getTracks().forEach(track => track.stop());
       };
