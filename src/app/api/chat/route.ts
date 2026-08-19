@@ -1,15 +1,13 @@
-import Groq from 'groq-sdk';
 import { NextResponse } from 'next/server';
 
-const apiKey = process.env.GROQ_API_KEY || '';
-const groq = new Groq({ apiKey });
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const prompt = body.prompt || '';
 
-    if (!apiKey) {
+    if (!GEMINI_API_KEY) {
       throw new Error('API Key is missing');
     }
 
@@ -45,25 +43,36 @@ Example 3:
 User: "મગફળીમાં કયું ખાતર નખાય?"
 Output: {"action": "answer", "message": "મગફળીમાં ડીએપી અથવા એનપીકે ખાતર નાખવું ફાયદાકારક છે."}`;
 
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt }
-      ],
-      model: 'qwen/qwen3.6-27b',
-      temperature: 0.1,
-      response_format: { type: 'json_object' }
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    
+    const response = await fetch(geminiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        system_instruction: {
+          parts: [{ text: systemPrompt }]
+        },
+        contents: [{
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          response_mime_type: "application/json"
+        }
+      })
     });
 
-    const text = chatCompletion.choices[0]?.message?.content || '{}';
-    // Clean up in case of weird Qwen tags
-    const cleanJsonText = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+    if (!response.ok) {
+      throw new Error(`Gemini API Error: ${await response.text()}`);
+    }
+
+    const data = await response.json();
+    let text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
     
     let parsed;
     try {
-      parsed = JSON.parse(cleanJsonText);
+      parsed = JSON.parse(text);
     } catch(e) {
-      parsed = { action: "answer", message: cleanJsonText };
+      parsed = { action: "answer", message: text };
     }
 
     return NextResponse.json(parsed);
