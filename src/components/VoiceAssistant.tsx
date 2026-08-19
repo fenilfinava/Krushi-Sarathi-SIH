@@ -32,7 +32,7 @@ export default function VoiceAssistant() {
       const chatRes = await fetch('/api/chat_audio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audio: base64Audio, lang: language })
+        body: JSON.stringify({ audio: base64Audio, lang: language, mimeType: audioBlob.type })
       });
       const data = await chatRes.json();
       console.log("AI Intent:", data);
@@ -77,7 +77,7 @@ export default function VoiceAssistant() {
     try {
       if (audioRef.current) audioRef.current.pause();
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -88,7 +88,7 @@ export default function VoiceAssistant() {
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType });
         processAudio(audioBlob);
         stream.getTracks().forEach(track => track.stop());
       };

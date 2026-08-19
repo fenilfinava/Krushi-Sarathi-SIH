@@ -7,6 +7,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const base64Audio = body.audio;
     const lang = body.lang || 'gu';
+    const mimeType = body.mimeType || 'audio/webm';
     
     if (!base64Audio) throw new Error("No audio provided");
 
@@ -50,7 +51,7 @@ Available actions:
           parts: [
             {
               inlineData: {
-                mimeType: "audio/webm",
+                mimeType: mimeType,
                 data: base64Audio
               }
             }
@@ -70,7 +71,9 @@ Available actions:
     }
     
     if (!response.ok) {
-      throw new Error(`API Error`);
+      const errorText = await response.text();
+      console.error(`Gemini API Error: ${response.status} - ${errorText}`);
+      throw new Error(`Gemini API Error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
@@ -87,9 +90,15 @@ Available actions:
     return NextResponse.json(parsed);
   } catch (error: any) {
     console.error('API Error:', error);
+    let errorMsg = 'માફ કરજો, સિસ્ટમમાં ખામી આવી છે. (System Error)';
+    
+    if (error.message.includes('API_KEY_INVALID') || error.message.includes('400') || error.message.includes('403')) {
+      errorMsg = 'API Key ખોટી છે, કૃપા કરીને Vercel માં સાચી કી નાખો. (Invalid API Key)';
+    }
+
     return NextResponse.json({ 
       action: 'answer', 
-      message: 'માફ કરજો, સિસ્ટમમાં ખામી આવી છે. (System Error)' 
+      message: errorMsg
     }, { status: 500 });
   }
 }
