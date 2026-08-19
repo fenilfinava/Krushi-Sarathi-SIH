@@ -27,8 +27,10 @@ The JSON must have this exact structure:
 Available actions:
 - "navigate_camera": If they want to scan a crop, take a photo, or check for disease.
 - "navigate_dashboard": If they want to see weather, go home, or see the dashboard.
-- "navigate_farms": If they want to manage their farms.
+- "navigate_farms": If they want to manage their farms (add/edit/delete).
 - "navigate_history": If they want to see past records.
+- "navigate_advisor": If they ask what crop to grow, seasonal advice, or crop advisor.
+- "navigate_soil_test": If they ask about soil testing, irrigation, water requirements, or fertilizers based on soil.
 - "answer": For general farming questions that don't require navigation.
 
 Example 1:

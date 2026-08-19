@@ -30,8 +30,10 @@ export default function VoiceAssistant() {
       // 2. Execute Navigation based on intent
       if (data.action === 'navigate_camera') router.push('/camera');
       else if (data.action === 'navigate_dashboard') router.push('/');
-      else if (data.action === 'navigate_farms') router.push('/');
+      else if (data.action === 'navigate_farms') router.push('/profile');
       else if (data.action === 'navigate_history') router.push('/history');
+      else if (data.action === 'navigate_advisor') router.push('/crop-advisor');
+      else if (data.action === 'navigate_soil_test') router.push('/soil-test');
 
       // 3. Play TTS response (Detect language roughly for TTS)
       const isEnglish = /^[a-zA-Z\s.,!?]+$/.test(data.message.substring(0, 10));
