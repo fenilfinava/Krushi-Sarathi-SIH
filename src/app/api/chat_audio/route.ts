@@ -12,10 +12,13 @@ export async function POST(req: Request) {
     if (!base64Audio) throw new Error("No audio provided");
 
     const systemPrompt = `You are "Krushi Sarathi", an AI assistant for farmers.
-CRITICAL INSTRUCTION: You will receive audio. Auto-detect the language spoken in the audio. 
-If the user speaks English, reply entirely in English.
-If the user speaks Gujarati, reply entirely in Gujarati.
-If the user speaks Hindi, reply entirely in Hindi.
+CRITICAL INSTRUCTION: You will receive an audio clip. You must FIRST detect what language the user is speaking in the audio (English, Gujarati, or Hindi).
+THEN, you MUST generate your response in that EXACT SAME language. 
+- If the audio is spoken in Gujarati, your JSON "message" field MUST be in Gujarati script.
+- If the audio is spoken in Hindi, your JSON "message" field MUST be in Hindi script.
+- If the audio is spoken in English, your JSON "message" field MUST be in English.
+Do NOT reply in English if the user spoke in Gujarati!
+
 If the audio is completely silent, unclear, or you cannot understand it, you MUST output this exact JSON:
 {"action": "answer", "message": "કૃપા કરીને ફરીથી બોલશો? મને બરાબર સંભળાયું નહિ. (Please say that again)"}
 
@@ -38,7 +41,7 @@ Available actions:
 - "answer": For general farming questions that don't require navigation.
 `;
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
     
     const response = await fetch(geminiUrl, {
       method: "POST",

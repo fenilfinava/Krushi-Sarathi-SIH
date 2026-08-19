@@ -48,7 +48,7 @@ Example 3:
 User: "મગફળીમાં કયું ખાતર નખાય?"
 Output: {"action": "answer", "message": "મગફળીમાં ડીએપી અથવા એનપીકે ખાતર નાખવું ફાયદાકારક છે."}`;
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
     
     const response = await fetch(geminiUrl, {
       method: "POST",
