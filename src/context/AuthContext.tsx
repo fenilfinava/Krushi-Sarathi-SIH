@@ -11,7 +11,7 @@ type User = {
 
 type AuthContextType = {
   user: User | null;
-  login: (name: string, phone: string, password?: string) => Promise<void>;
+  login: (mode: 'signin' | 'signup', name: string, phone: string, password?: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 };
@@ -34,20 +34,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = async (name: string, phone: string, password?: string) => {
+  const login = async (mode: 'signin' | 'signup', name: string, phone: string, password?: string) => {
     try {
       let existingUsers = await supabase.from("users").eq("phone", phone);
       let loggedInUser;
       
-      if (existingUsers && existingUsers.length > 0) {
-        // User exists, check password
+      if (mode === 'signin') {
+        if (!existingUsers || existingUsers.length === 0) {
+          throw new Error("User Not Found");
+        }
         if (password && existingUsers[0].password && existingUsers[0].password !== password) {
           throw new Error("Wrong Password");
         }
         loggedInUser = existingUsers[0];
       } else {
-        // Create new user with password
+        // signup mode
+        if (existingUsers && existingUsers.length > 0) {
+          throw new Error("User Already Exists");
+        }
         const newUsers = await supabase.from("users").insert({ name, phone, password: password || "" });
+        if (!newUsers || newUsers.length === 0) {
+          throw new Error("Failed to create user");
+        }
         loggedInUser = newUsers[0];
       }
       
@@ -57,6 +65,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Login Error:", e);
       if (e.message === "Wrong Password") {
         alert("ખોટો પાસવર્ડ! ફરી પ્રયાસ કરો.");
+      } else if (e.message === "User Not Found") {
+        alert("આ નંબરથી કોઈ ખાતું નથી. કૃપા કરીને 'નવું ખાતું' બનાવો.");
+      } else if (e.message === "User Already Exists") {
+        alert("આ નંબરથી પહેલેથી જ ખાતું છે. કૃપા કરીને લોગિન કરો.");
       } else {
         alert("લોગિનમાં ભૂલ આવી. કૃપા કરીને ફરી પ્રયાસ કરો.");
       }

@@ -37,7 +37,7 @@ export default function LoginPage() {
 
     setIsLoading(true);
     try {
-      await login(mode === "signup" ? name : "existing_user", phone, password);
+      await login(mode, mode === "signup" ? name : "existing_user", phone, password);
       setTimeout(() => {
         router.push(mode === "signup" ? "/onboarding" : "/");
       }, 500);
