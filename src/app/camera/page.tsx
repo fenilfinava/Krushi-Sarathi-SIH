@@ -18,6 +18,29 @@ export default function CameraPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const playAudio = async (text: string) => {
+    try {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      const cleanText = text.replace(/[*#]/g, '');
+      const ttsRes = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: cleanText, lang: language })
+      });
+      if (ttsRes.ok) {
+        const audioBlob = await ttsRes.blob();
+        const audio = new Audio(URL.createObjectURL(audioBlob));
+        audioRef.current = audio;
+        audio.play();
+      }
+    } catch (e) {
+      console.error("TTS failed:", e);
+    }
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -26,6 +49,7 @@ export default function CameraPage() {
       setPreviewUrl(URL.createObjectURL(file));
       setResult(null); // Clear old results
       setErrorMsg(null);
+      if (audioRef.current) audioRef.current.pause(); // Stop audio if image changed
     }
   };
 
@@ -34,6 +58,8 @@ export default function CameraPage() {
 
     setIsAnalyzing(true);
     setErrorMsg(null);
+    if (audioRef.current) audioRef.current.pause();
+
     try {
       const formData = new FormData();
       formData.append('image', imageFile);
@@ -55,24 +81,8 @@ export default function CameraPage() {
           await saveActivityHistory(user.id, "Camera", diseaseName, data.advice);
         }
         
-        // Auto-play the advice using our TTS endpoint
-        try {
-          // Remove Markdown characters for cleaner speech
-          const cleanText = data.advice.replace(/[*#]/g, '');
-          const ttsRes = await fetch('/api/tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: cleanText, lang: language })
-          });
-          if (ttsRes.ok) {
-            const audioBlob = await ttsRes.blob();
-            const audioUrl = URL.createObjectURL(audioBlob);
-            const audio = new Audio(audioUrl);
-            audio.play();
-          }
-        } catch (e) {
-          console.error("Auto TTS failed:", e);
-        }
+        // Auto-play the advice
+        playAudio(data.advice);
 
       } else {
         setErrorMsg(data.error || 'Failed to analyze');
@@ -123,19 +133,7 @@ export default function CameraPage() {
                       <p className="text-sm opacity-80 mt-1 text-red-800">Confidence: {(result.confidence * 100).toFixed(1)}%</p>
                     </div>
                     <button 
-                      onClick={async () => {
-                        const cleanText = result.advice.replace(/[*#]/g, '');
-                        const ttsRes = await fetch('/api/tts', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ text: cleanText, lang: language })
-                        });
-                        if (ttsRes.ok) {
-                          const audioBlob = await ttsRes.blob();
-                          const audio = new Audio(URL.createObjectURL(audioBlob));
-                          audio.play();
-                        }
-                      }}
+                      onClick={() => playAudio(result.advice)}
                       className="bg-white text-red-700 p-3 rounded-full shadow hover:bg-red-100 transition-colors"
                       title="Listen"
                     >

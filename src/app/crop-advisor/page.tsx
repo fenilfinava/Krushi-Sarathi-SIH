@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { Loader2, Sprout, TrendingUp, CloudRain, MapPin, Mic } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -16,6 +16,29 @@ export default function CropAdvisorPage() {
   const [result, setResult] = useState<string | null>(null);
   const [location, setLocation] = useState<{lat: number, lon: number, name: string} | null>(null);
   const [isListening, setIsListening] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const playAudio = async (text: string) => {
+    try {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      const cleanText = text.replace(/[*#]/g, '');
+      const ttsRes = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: cleanText, lang: language })
+      });
+      if (ttsRes.ok) {
+        const audioBlob = await ttsRes.blob();
+        const audio = new Audio(URL.createObjectURL(audioBlob));
+        audioRef.current = audio;
+        audio.play();
+      }
+    } catch (e) {
+      console.error("TTS failed:", e);
+    }
+  };
 
   useEffect(() => {
     setSeason(t('ca_season_kharif'));
@@ -80,18 +103,7 @@ export default function CropAdvisorPage() {
         }
 
         // Auto-Play Voice
-        try {
-          const cleanText = data.advice.replace(/[*#]/g, '');
-          const ttsRes = await fetch('/api/tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: cleanText, lang: language })
-          });
-          if (ttsRes.ok) {
-            const audioBlob = await ttsRes.blob();
-            new Audio(URL.createObjectURL(audioBlob)).play();
-          }
-        } catch(e) {}
+        playAudio(data.advice);
       } else {
         alert(data.error);
       }
@@ -167,18 +179,7 @@ export default function CropAdvisorPage() {
               <Sprout /> {t('ca_report')}
             </h3>
             <button 
-              onClick={async () => {
-                const cleanText = result.replace(/[*#]/g, '');
-                const ttsRes = await fetch('/api/tts', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ text: cleanText, lang: language })
-                });
-                if (ttsRes.ok) {
-                  const audioBlob = await ttsRes.blob();
-                  new Audio(URL.createObjectURL(audioBlob)).play();
-                }
-              }}
+              onClick={() => playAudio(result)}
               className="bg-white text-purple-700 p-2.5 rounded-full shadow hover:bg-purple-100"
             >
               🔊

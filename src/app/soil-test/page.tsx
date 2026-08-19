@@ -19,6 +19,29 @@ export default function SoilTestPage() {
   const [result, setResult] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const playAudio = async (text: string) => {
+    try {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      const cleanText = text.replace(/[*#]/g, '');
+      const ttsRes = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: cleanText, lang: language })
+      });
+      if (ttsRes.ok) {
+        const audioBlob = await ttsRes.blob();
+        const audio = new Audio(URL.createObjectURL(audioBlob));
+        audioRef.current = audio;
+        audio.play();
+      }
+    } catch (e) {
+      console.error("TTS failed:", e);
+    }
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -84,18 +107,7 @@ export default function SoilTestPage() {
         }
 
         // Auto-Play Voice
-        try {
-          const cleanText = data.advice.replace(/[*#]/g, '');
-          const ttsRes = await fetch('/api/tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: cleanText, lang: language })
-          });
-          if (ttsRes.ok) {
-            const audioBlob = await ttsRes.blob();
-            new Audio(URL.createObjectURL(audioBlob)).play();
-          }
-        } catch(e) {}
+        playAudio(data.advice);
         
       } else {
         alert(data.error);
@@ -189,18 +201,7 @@ export default function SoilTestPage() {
               <Droplets /> {t('soil_report')}
             </h3>
             <button 
-              onClick={async () => {
-                const cleanText = result.replace(/[*#]/g, '');
-                const ttsRes = await fetch('/api/tts', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ text: cleanText, lang: language })
-                });
-                if (ttsRes.ok) {
-                  const audioBlob = await ttsRes.blob();
-                  new Audio(URL.createObjectURL(audioBlob)).play();
-                }
-              }}
+              onClick={() => playAudio(result)}
               className="bg-white text-orange-700 p-2.5 rounded-full shadow hover:bg-orange-100"
             >
               🔊
