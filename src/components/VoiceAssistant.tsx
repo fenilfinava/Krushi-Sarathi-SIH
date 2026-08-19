@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Mic, MicOff, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function VoiceAssistant() {
   const [isListening, setIsListening] = useState(false);
@@ -11,6 +12,8 @@ export default function VoiceAssistant() {
   const audioChunksRef = useRef<Blob[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const router = useRouter();
+
+  const { language } = useLanguage();
 
   const processText = async (text: string) => {
     setIsProcessing(true);
@@ -22,10 +25,14 @@ export default function VoiceAssistant() {
       const chatRes = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: text })
+        body: JSON.stringify({ prompt: text, lang: language })
       });
       const data = await chatRes.json();
       console.log("AI Intent:", data);
+
+      if (!data || !data.message) {
+        throw new Error("Invalid AI Response");
+      }
 
       // 2. Execute Navigation based on intent
       if (data.action === 'navigate_camera') router.push('/camera');
@@ -37,7 +44,7 @@ export default function VoiceAssistant() {
 
       // 3. Play TTS response (Detect language roughly for TTS)
       const isEnglish = /^[a-zA-Z\s.,!?]+$/.test(data.message.substring(0, 10));
-      const ttsLang = isEnglish ? 'en-US' : 'gu-IN';
+      const ttsLang = isEnglish ? 'en-US' : (language === 'hi' ? 'hi-IN' : 'gu-IN');
       
       const audioUrl = `/api/tts?text=${encodeURIComponent(data.message)}&lang=${ttsLang}`;
       
@@ -49,6 +56,11 @@ export default function VoiceAssistant() {
 
     } catch (error) {
       console.error("Error processing voice intent", error);
+      // Fallback audio if something fails
+      const fallbackMsg = language === 'en' ? "Sorry, system error." : "માફ કરજો, સિસ્ટમમાં ખામી છે.";
+      const ttsLang = language === 'en' ? 'en-US' : 'gu-IN';
+      const audio = new Audio(`/api/tts?text=${encodeURIComponent(fallbackMsg)}&lang=${ttsLang}`);
+      audio.play();
     } finally {
       setIsProcessing(false);
     }
@@ -64,7 +76,12 @@ export default function VoiceAssistant() {
     if (audioRef.current) audioRef.current.pause();
     
     const recognition = new SpeechRecognition();
-    recognition.lang = 'gu-IN'; // Default to Gujarati for farmers
+    
+    // Use the current app language for speech recognition!
+    if (language === 'en') recognition.lang = 'en-US';
+    else if (language === 'hi') recognition.lang = 'hi-IN';
+    else recognition.lang = 'gu-IN';
+
     recognition.continuous = false;
     recognition.interimResults = false;
     

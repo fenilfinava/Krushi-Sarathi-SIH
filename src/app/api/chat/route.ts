@@ -6,15 +6,18 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const prompt = body.prompt || '';
+    const lang = body.lang || 'gu';
 
     if (!GEMINI_API_KEY) {
       throw new Error('API Key is missing');
     }
+    
+    let languageName = "Gujarati";
+    if (lang === 'en') languageName = "English";
+    if (lang === 'hi') languageName = "Hindi";
 
     const systemPrompt = `You are "Krushi Sarathi", an AI assistant for farmers.
-CRITICAL INSTRUCTION: You must respond in the EXACT SAME LANGUAGE as the user's prompt. 
-If the user's prompt is in English, reply entirely in English. 
-If the user's prompt is in Gujarati, reply entirely in Gujarati.
+CRITICAL INSTRUCTION: You MUST respond entirely in ${languageName}, regardless of what language the user's prompt is written in or transcribed in.
 Your job is to act as a voice controller for the app and answer farming questions.
 
 Determine the user's intent. Output ONLY a valid JSON object with no markdown formatting or backticks.
@@ -69,6 +72,7 @@ Output: {"action": "answer", "message": "મગફળીમાં ડીએપ�
 
     const data = await response.json();
     let text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+    text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
     
     let parsed;
     try {
