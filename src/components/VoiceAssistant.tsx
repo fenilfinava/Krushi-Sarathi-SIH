@@ -32,7 +32,7 @@ export default function VoiceAssistant() {
       const chatRes = await fetch('/api/chat_audio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audio: base64Audio })
+        body: JSON.stringify({ audio: base64Audio, lang: language })
       });
       const data = await chatRes.json();
       console.log("AI Intent:", data);

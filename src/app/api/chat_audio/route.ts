@@ -6,6 +6,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const base64Audio = body.audio;
+    const lang = body.lang || 'gu';
     
     if (!base64Audio) throw new Error("No audio provided");
 
@@ -62,7 +63,10 @@ Available actions:
     });
 
     if (response.status === 429) {
-       return NextResponse.json({ action: 'answer', message: 'Take some time, API limit reached. (Please wait a bit)' });
+       let limitMsg = 'Take some time, API limit reached. (Please wait a bit)';
+       if (lang === 'gu') limitMsg = 'API ની લિમિટ પૂરી થઈ ગઈ છે, થોડી વાર પછી પ્રયત્ન કરો.';
+       if (lang === 'hi') limitMsg = 'API की लिमिट खत्म हो गई है, थोड़ी देर बाद प्रयास करें।';
+       return NextResponse.json({ action: 'answer', message: limitMsg });
     }
     
     if (!response.ok) {
