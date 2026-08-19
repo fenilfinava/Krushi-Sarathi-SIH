@@ -51,21 +51,3 @@ npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the app.
 
-## ☁️ Deploy on Vercel
-
-The easiest way to deploy this Next.js app is to use Vercel:
-
-1. Push your code to GitHub.
-2. Go to [Vercel](https://vercel.com/) and click **Add New Project**.
-3. Import this GitHub repository.
-4. Go to **Environment Variables** and add:
-   - Name: `GEMINI_API_KEY`
-   - Value: `[Your API Key]`
-5. Click **Deploy**.
-
-## 📱 Screenshots & UI
-
-The UI is heavily optimized for mobile devices, mimicking a native app experience with a bottom navigation bar (replaced by an intuitive dashboard), splash screens, and easy-to-tap cards for farmers.
-
----
-**Powered by AI • Made for Indian Farmers 🇮🇳**
