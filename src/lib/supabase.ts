@@ -27,7 +27,7 @@ export const supabase = {
       if (!res.ok) throw new Error(await res.text());
       return res.json();
     },
-    eq: async (column: string, value: string, selectQuery: string = "*") => {
+    eq: (column: string, value: string, selectQuery: string = "*"): any => {
       // Allow chaining a GET, DELETE, or PATCH
       const baseObj = {
         then: (resolve: any, reject: any) => {
@@ -59,7 +59,7 @@ export const supabase = {
         }
       };
       
-      return baseObj;
+      return baseObj as any;
     }
   })
 };
