@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌾 Krushi Sarathi (કૃષિ સારથી)
 
-## Getting Started
+Krushi Sarathi is an AI-powered digital assistant for Indian farmers, designed to provide smart agricultural solutions. It leverages the power of GenAI to bridge the information gap in farming, offering localized, voice-enabled, and multilingual guidance.
 
-First, run the development server:
+Built for **Smart India Hackathon (SIH)**.
 
+## ✨ Features
+
+- **🌐 Multilingual Support:** Full support for Gujarati, Hindi, and English. The app translates UI elements and even user-generated database content dynamically!
+- **🎙️ Voice Assistant:** Type or just speak! Uses speech recognition to fill out farm details and ask questions.
+- **📸 Crop Disease Detection:** Upload a photo of a diseased plant, and the Gemini AI model instantly identifies the disease, its primary solution, and recommended fertilizers/medicines.
+- **🌱 Smart Crop Advisor:** Enter your soil type and season to get AI-powered recommendations on what crops to grow for maximum yield.
+- **💧 Soil & Irrigation Test:** Analyzes farm data and provides suggestions on irrigation schedules and soil treatment.
+- **🔔 AI Farm Alerts:** Add your farms with sowing dates, and receive automated, timed alerts (e.g., "Time to add fertilizer", "Pesticide check due") on the dashboard.
+- **📜 Activity History:** Keep track of your past disease scans, soil tests, and advisor queries.
+
+## 🛠️ Tech Stack
+
+- **Frontend:** Next.js (App Router), React, Tailwind CSS, Lucide Icons
+- **Backend:** Next.js Route Handlers (`/api/*`)
+- **Database:** Supabase (PostgreSQL) + REST API
+- **AI Integration:** Google Gemini (Generative Language API) via raw fetch
+- **Styling:** Glassmorphism UI, Responsive Mobile-First Design
+
+## 🚀 Getting Started
+
+### Prerequisites
+Make sure you have Node.js (v18+) installed.
+
+### 1. Clone the repository
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/fenilfinava/Krushi-Sarathi-SIH.git
+cd Krushi-Sarathi-SIH
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Install dependencies
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Environment Variables
+Create a `.env.local` file in the root directory and add your Gemini API Key:
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+*(Note: Supabase credentials are pre-configured in `src/lib/supabase.ts` for this hackathon build).*
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. Run the development server
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the app.
 
-## Learn More
+## ☁️ Deploy on Vercel
 
-To learn more about Next.js, take a look at the following resources:
+The easiest way to deploy this Next.js app is to use Vercel:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Push your code to GitHub.
+2. Go to [Vercel](https://vercel.com/) and click **Add New Project**.
+3. Import this GitHub repository.
+4. Go to **Environment Variables** and add:
+   - Name: `GEMINI_API_KEY`
+   - Value: `[Your API Key]`
+5. Click **Deploy**.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📱 Screenshots & UI
 
-## Deploy on Vercel
+The UI is heavily optimized for mobile devices, mimicking a native app experience with a bottom navigation bar (replaced by an intuitive dashboard), splash screens, and easy-to-tap cards for farmers.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+**Powered by AI • Made for Indian Farmers 🇮🇳**
