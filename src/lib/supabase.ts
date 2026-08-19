@@ -28,12 +28,38 @@ export const supabase = {
       return res.json();
     },
     eq: async (column: string, value: string, selectQuery: string = "*") => {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${column}=eq.${encodeURIComponent(value)}&select=${selectQuery}`, {
-        method: "GET",
-        headers
-      });
-      if (!res.ok) throw new Error(await res.text());
-      return res.json();
+      // Allow chaining a GET, DELETE, or PATCH
+      const baseObj = {
+        then: (resolve: any, reject: any) => {
+          // If awaited directly, do a GET
+          fetch(`${SUPABASE_URL}/rest/v1/${table}?${column}=eq.${encodeURIComponent(value)}&select=${selectQuery}`, {
+            method: "GET",
+            headers
+          }).then(res => {
+            if (!res.ok) res.text().then(reject);
+            else res.json().then(resolve);
+          }).catch(reject);
+        },
+        delete: async () => {
+          const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${column}=eq.${encodeURIComponent(value)}`, {
+            method: "DELETE",
+            headers: { ...headers, "Prefer": "return=minimal" }
+          });
+          if (!res.ok) throw new Error(await res.text());
+          return true;
+        },
+        update: async (data: any) => {
+          const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${column}=eq.${encodeURIComponent(value)}`, {
+            method: "PATCH",
+            headers: { ...headers, "Prefer": "return=minimal" },
+            body: JSON.stringify(data)
+          });
+          if (!res.ok) throw new Error(await res.text());
+          return true;
+        }
+      };
+      
+      return baseObj;
     }
   })
 };
