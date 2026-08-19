@@ -12,27 +12,13 @@ export default function VoiceAssistant() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const router = useRouter();
 
-  const processAudio = async (audioBlob: Blob) => {
+  const processText = async (text: string) => {
     setIsProcessing(true);
     try {
-      // 1. Transcribe audio using Whisper (Auto-detects language)
-      const formData = new FormData();
-      formData.append('file', new File([audioBlob], 'audio.webm', { type: 'audio/webm' }));
-      
-      const transcribeRes = await fetch('/api/transcribe', {
-        method: 'POST',
-        body: formData
-      });
-      const transcribeData = await transcribeRes.json();
-      const text = transcribeData.text;
-      console.log("Heard (Whisper):", text);
+      console.log("Heard:", text);
+      if (!text || text.trim() === '') return;
 
-      if (!text || text.trim() === '') {
-        setIsProcessing(false);
-        return;
-      }
-
-      // 2. Send text to LLM to get intent
+      // 1. Send text to LLM to get intent
       const chatRes = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -41,13 +27,13 @@ export default function VoiceAssistant() {
       const data = await chatRes.json();
       console.log("AI Intent:", data);
 
-      // 3. Execute Navigation based on intent
+      // 2. Execute Navigation based on intent
       if (data.action === 'navigate_camera') router.push('/camera');
       else if (data.action === 'navigate_dashboard') router.push('/');
       else if (data.action === 'navigate_farms') router.push('/');
       else if (data.action === 'navigate_history') router.push('/history');
 
-      // 4. Play TTS response (Detect language roughly for TTS)
+      // 3. Play TTS response (Detect language roughly for TTS)
       const isEnglish = /^[a-zA-Z\s.,!?]+$/.test(data.message.substring(0, 10));
       const ttsLang = isEnglish ? 'en-US' : 'gu-IN';
       
@@ -66,39 +52,44 @@ export default function VoiceAssistant() {
     }
   };
 
-  const startRecording = async () => {
-    try {
-      if (audioRef.current) audioRef.current.pause();
-      
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        processAudio(audioBlob);
-        stream.getTracks().forEach(track => track.stop());
-      };
-
-      mediaRecorder.start();
-      setIsListening(true);
-    } catch (error) {
-      console.error("Error accessing microphone", error);
+  const startRecording = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('તમારા ફોનમાં વોઇસ ટાઇપિંગ સપોર્ટ નથી. (Voice not supported)');
+      return;
     }
+
+    if (audioRef.current) audioRef.current.pause();
+    
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'gu-IN'; // Default to Gujarati for farmers
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (e: any) => {
+      const transcript = e.results[0][0].transcript;
+      processText(transcript);
+    };
+
+    recognition.onerror = (e: any) => {
+      console.error("Speech recognition error", e.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isListening) {
-      mediaRecorderRef.current.stop();
-      setIsListening(false);
-    }
+    // With browser speech recognition, it stops automatically or we just let it end.
+    setIsListening(false);
   };
 
   const toggleVoice = () => {
